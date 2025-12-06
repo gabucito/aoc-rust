@@ -38,6 +38,10 @@ impl Matrix {
         }
     }
 
+    fn set_index(&mut self, index: usize, value: bool) {
+        self.data[index] = value;
+    }
+
     fn set(&mut self, row: usize, col: usize, value: bool) -> Option<()> {
         if row < self.data.len() / self.cols && col < self.cols {
             self.data[row * self.cols + col] = value;
@@ -161,10 +165,6 @@ fn parse_input(input: &str) -> (Vec<bool>, usize, usize) {
 pub fn part_one(input: &str) -> Option<u64> {
     let data = parse_input(input);
     let matrix = Matrix::new(data.0, data.1, data.2);
-    println!("{matrix}");
-    // let index = 81;
-    // let count = matrix.check_all(index);
-    // println!("Index {} has {} neighbors", index, count);
     let mut total = 0;
     for (index, value) in matrix.data.iter().enumerate() {
         if *value {
@@ -178,7 +178,24 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let data = parse_input(input);
+    let mut matrix = Matrix::new(data.0, data.1, data.2);
+    let mut total = 0;
+    let mut has_neighbors = true;
+    while has_neighbors {
+        has_neighbors = false;
+        for (index, value) in matrix.data.clone().iter().enumerate() {
+            if *value {
+                let count = matrix.check_all(index);
+                if count < 4 {
+                    total += 1;
+                    matrix.set_index(index, false);
+                    has_neighbors = true;
+                }
+            }
+        }
+    }
+    Some(total)
 }
 
 #[cfg(test)]
@@ -194,6 +211,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(43));
     }
 }
