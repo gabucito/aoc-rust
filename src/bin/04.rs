@@ -6,7 +6,7 @@ advent_of_code::solution!(4);
 struct Matrix {
     data: Vec<bool>,
     cols: usize,
-    rows: usize,
+    rows: usize, // now truly "number of rows"
 }
 
 impl Display for Matrix {
@@ -31,7 +31,7 @@ impl Matrix {
     }
 
     fn get(&self, row: usize, col: usize) -> Option<bool> {
-        if row < self.data.len() / self.cols && col < self.cols {
+        if row < self.rows && col < self.cols {
             Some(self.data[row * self.cols + col])
         } else {
             None
@@ -43,7 +43,7 @@ impl Matrix {
     }
 
     fn set(&mut self, row: usize, col: usize, value: bool) -> Option<()> {
-        if row < self.data.len() / self.cols && col < self.cols {
+        if row < self.rows && col < self.cols {
             self.data[row * self.cols + col] = value;
             Some(())
         } else {
@@ -76,7 +76,7 @@ impl Matrix {
     }
 
     fn check_right(&self, row: usize, col: usize) -> bool {
-        if col == self.cols {
+        if col + 1 >= self.cols {
             false
         } else {
             self.get(row, col + 1).unwrap_or(false)
@@ -84,7 +84,7 @@ impl Matrix {
     }
 
     fn check_below(&self, row: usize, col: usize) -> bool {
-        if row == self.rows {
+        if row + 1 >= self.rows {
             false
         } else {
             self.get(row + 1, col).unwrap_or(false)
@@ -100,7 +100,7 @@ impl Matrix {
     }
 
     fn check_above_right(&self, row: usize, col: usize) -> bool {
-        if row == 0 || col == self.cols {
+        if row == 0 || col + 1 >= self.cols {
             false
         } else {
             self.get(row - 1, col + 1).unwrap_or(false)
@@ -108,7 +108,7 @@ impl Matrix {
     }
 
     fn check_below_left(&self, row: usize, col: usize) -> bool {
-        if row == self.rows || col == 0 {
+        if row + 1 >= self.rows || col == 0 {
             false
         } else {
             self.get(row + 1, col - 1).unwrap_or(false)
@@ -116,7 +116,7 @@ impl Matrix {
     }
 
     fn check_below_right(&self, row: usize, col: usize) -> bool {
-        if row == self.rows || col == self.cols {
+        if row + 1 >= self.rows || col + 1 >= self.cols {
             false
         } else {
             self.get(row + 1, col + 1).unwrap_or(false)
@@ -155,10 +155,20 @@ impl Matrix {
 }
 
 fn parse_input(input: &str) -> (Vec<bool>, usize, usize) {
-    let mut lines = input.lines();
-    let cols = lines.next().unwrap().len();
-    let rows = lines.count();
-    let data = input.replace("\n", "").chars().map(|c| c == '@').collect();
+    // Strip out any completely empty lines just in case
+    let lines: Vec<&str> = input.lines().filter(|l| !l.is_empty()).collect();
+
+    let rows = lines.len();
+    let cols = if rows > 0 { lines[0].len() } else { 0 };
+
+    // Flatten into Vec<bool>, true for '@', false otherwise
+    let mut data = Vec::with_capacity(rows * cols);
+    for line in &lines {
+        // AoC: all lines are same length; if you want you can assert here
+        // assert_eq!(line.len(), cols);
+        data.extend(line.chars().map(|c| c == '@'));
+    }
+
     (data, cols, rows)
 }
 
