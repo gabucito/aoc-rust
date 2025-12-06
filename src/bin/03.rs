@@ -5,19 +5,18 @@ struct Bank {
     joltages: Vec<u64>,
 }
 
-#[derive(Debug)]
-struct JoltagePair {
-    first: u64,
-    second: u64,
+struct Sequence {
+    values: Vec<Option<u64>>,
 }
 
-impl JoltagePair {
-    fn new(first: u64, second: u64) -> Self {
-        JoltagePair { first, second }
-    }
+impl Sequence {
+    fn new(length: usize) -> Self {
+        let mut sequence = Sequence {
+            values: vec![None; length + 1],
+        };
 
-    fn jolts(&self) -> u64 {
-        (self.first * 10) + self.second
+        sequence.values[0] = Some(0);
+        sequence
     }
 }
 
@@ -30,32 +29,27 @@ impl Bank {
         Bank { joltages }
     }
 
-    fn highest_pair(&self) -> JoltagePair {
-        let mut current = JoltagePair::new(0, 0);
-        let mut iter = self.joltages.iter().peekable();
-        while let Some(joltage) = iter.next() {
-            let has_next = iter.peek().is_some();
-            let test_first = JoltagePair::new(*joltage, 0);
-            let test_second = JoltagePair::new(current.first, *joltage);
-            if has_next && test_first.jolts() > current.jolts() {
-                current = test_first;
-            }
-            if test_second.jolts() > current.jolts() {
-                current = test_second;
+    fn highest(&self, length: usize) -> u64 {
+        let mut sequence = Sequence::new(length);
+        for &digit in self.joltages.iter() {
+            for l in (1..=length).rev() {
+                if let Some(prev) = sequence.values[l - 1] {
+                    let cand = prev * 10 + digit;
+                    sequence.values[l] = Some(match sequence.values[l] {
+                        Some(current) => current.max(cand),
+                        None => cand,
+                    });
+                }
             }
         }
-        current
-    }
-
-    fn highest_jolts(&self) -> u64 {
-        self.highest_pair().jolts()
+        sequence.values[length].unwrap_or(0)
     }
 }
 
 pub fn part_one(input: &str) -> Option<u64> {
     let highest: u64 = input
         .lines()
-        .map(|line| Bank::new(&line).highest_jolts())
+        .map(|line| Bank::new(&line).highest(2))
         .collect::<Vec<u64>>()
         .iter()
         .sum();
@@ -64,7 +58,14 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let highest: u64 = input
+        .lines()
+        .map(|line| Bank::new(&line).highest(12))
+        .collect::<Vec<u64>>()
+        .iter()
+        .sum();
+
+    Some(highest)
 }
 
 #[cfg(test)]
@@ -80,6 +81,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(3121910778619));
     }
 }
